@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .container h1 {
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .form-group button {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .form-group button:hover {
+            background-color: #218838;
+        }
+        #search-results {
+            margin-top: 30px;
+        }
+        #search-results ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #search-results li {
+            padding: 10px;
+            background-color: #f1f1f1;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Customer Search</h1>
+        <div class="form-group">
+            <input type="text" id="search-input" placeholder="Enter Customer Name or ID">
+        </div>
+        <div class="form-group">
+            <button id="search-button">Search</button>
+        </div>
+
+        <div id="search-results"></div>
+    </div>
+
+    <script>
+        document.getElementById('search-button').addEventListener('click', () => {
+            const searchInput = document.getElementById('search-input').value.trim();
+            const apiUrl = 'https://numista-zoho.ictdevs.co.za/api';
+            require('dotenv').config();
+            const token = 'process.env.API_TOKEN';
+
+            if (!searchInput) {
+                alert('Please enter a name or ID to search.');
+                return;
+            }
+
+            // Determine if it's an ID (numeric) or name (non-numeric)
+            if (isNaN(searchInput)) {
+                // POST request if searching by name
+                fetch(`${apiUrl}/customers/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({ lookup: searchInput }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const searchResults = document.getElementById('search-results');
+                    if (data && data.length > 0) {
+                        searchResults.innerHTML = generateSearchResultsHTML(data);
+                    } else {
+                        searchResults.innerHTML = 'No matching customers found.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error performing customer search:', error);
+                    document.getElementById('search-results').innerHTML = 'Error performing customer search.';
+                });
+            } else {
+                // GET request if searching by ID
+                fetch(`${apiUrl}/customers/${searchInput}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const searchResults = document.getElementById('search-results');
+                    if (data && data.id) {
+                        searchResults.innerHTML = generateSearchResultsHTML([data]); // Use data in an array for consistency
+                    } else {
+                        searchResults.innerHTML = 'No customer found with this ID.';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error performing customer search by ID:', error);
+                    document.getElementById('search-results').innerHTML = 'Error performing customer search by ID.';
+                });
+            }
+        });
+
+        function generateSearchResultsHTML(data) {
+            let html = '<h3>Search Results</h3><ul>';
+            data.forEach(customer => {
+                html += `
+                    <li>
+                        <p><strong>ID:</strong> ${customer.id}</p>
+                <p><strong>Name:</strong> ${customer.name}</p>
+                <p><strong>Email:</strong> ${customer.email}</p>
+                <p><strong>Contact Number:</strong> ${customer.mobile}</p>
+                <p><strong>Company Name:</strong> ${customer.company_name}</p>
+                <p><strong>Parent ID:</strong> ${customer.parent_id || 'Not Available'}</p>
+                <p><strong>Type:</strong> ${customer.type || 'Not Available'}</p>
+                <p><strong>Supplier:</strong> ${customer.is_supplier || 'Not Available'}</p>
+                <p><strong>Billing Account:</strong> ${customer.billing_account_number || 'Not Available'}</p>
+                <p><strong>Registration Number:</strong> ${customer.registration_number || 'Not Available'}</p>
+                <p><strong>ID Number:</strong> ${customer.id_number || 'Not Available'}</p>
+                <p><strong>Telephone:</strong> ${customer.telephone || 'Not Available'}</p>
+                <p><strong>Billing Date:</strong> ${customer.billing_date || 'Not Available'}</p>
+                <p><strong>Subscriber ID:</strong> ${customer.subscriber_id || 'Not Available'}</p>
+                <p><strong>Sync in Progress:</strong> ${customer.sync_in_progress || 'Not Available'}</p>
+                <p><strong>Admin Fees:</strong> ${customer.admin_fees || 'Not Available'}</p>
+                <p><strong>Rebate Level:</strong> ${customer.rebate_level || 'Not Available'}</p>
+                <p><strong>3CX Partner ID:</strong> ${customer.three_cx_partner_id || 'Not Available'}</p>
+                <p><strong>Client Zone Active:</strong> ${customer.client_zone_active || 'Not Available'}</p>
+                <p><strong>Odoo Contact ID:</strong> ${customer.odoo_contact_id || 'Not Available'}</p>
+                <p><strong>Odoo Subscription ID:</strong> ${customer.odoo_subscription_id || 'Not Available'}</p>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            return html;
+        }
+    </script>
+
+</body>
+</html>
+
